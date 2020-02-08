@@ -2,6 +2,7 @@ import pygame
 from pygame import *
 import sqlite3
 import os
+import random
 
 enemy = ''
 fight = False  # Короче, это були для сражений
@@ -10,6 +11,10 @@ prepare_fight = True
 turn = True
 gg_wp = True
 act_btn_active = False
+
+base_hp = 25
+
+base_atc = 4
 
 counted = 0
 
@@ -450,24 +455,17 @@ def main():
                 screen.blit(e.image, camera.apply(e))
         else:
             if prepare_fight:
-                con = sqlite3.connect('locations.db')
-                cur = con.cursor()
-                enemies_id = cur.execute(
-                    "SELECT * FROM stats WHERE id_fight = " + str(1)).fetchall()
-                enemy_count = 2
-                count = 0
+                enemy_count = random.randint(1, 3)
+                count = 1
                 enemies = []
-                for i in enemies_id:
-                    stats = [i[1], i[2], i[4]]
+                for _ in range(enemy_count):
+                    stats = [random.randint(15, 20), random.randint(1, 4), count]
+                    count += 1
                     enemies.append(stats)
-                con.close()
                 prepare_fight = False
-                con = sqlite3.connect('locations.db')
-                cur = con.cursor()
-                main_player = cur.execute(
-                    "SELECT * FROM stats WHERE id_fight = 0").fetchall()
-                main_player_hp = main_player[0][1]
-                main_player_atc = main_player[0][2]
+                global base_hp, base_atc
+                main_player_hp = base_hp
+                main_player_atc = base_atc
 
             screen.fill((0, 0, 0))
             screen.blit(atc_btn.load_image(), (90, 510), area=None,
@@ -515,8 +513,8 @@ def main():
                 for i in enemies:
                     if (fight_coord_x - 210) // 100 + 1 == i[
                         2] and 300 < fight_coord_y < 340 and i[0] > 0:
-                        i[0] = i[0] - main_player_atc
-                        main_player_hp += main_player_atc
+                        i[0] = i[0] - 0
+                        main_player_hp += (main_player_atc * 3)
                         act_btn_active = False
                         turn = False
             counted = 0
@@ -524,13 +522,12 @@ def main():
                 if i[0] > 0:
                     counted = 1
             if counted == 0:
-                # con = sqlite3.connect('locations.db')
-                # esc = cur.execute("UPDATE Enemy_spot SET enemy_check = 'no' WHERE id_fight = " + str(fight_id[0]))
-                # con.commit()
-                # con.close()
                 fight = False
                 prepare_fight = True
                 enemys.remove(enemy)
+                base_atc += 1
+                base_hp += 5
+
             if fight and not turn:
                 for i in enemies:
                     if i[0] > 0:
@@ -540,13 +537,6 @@ def main():
                 gg_wp = False
                 fight = False
                 turn = False
-                con = sqlite3.connect('locations.db')
-                cur = con.cursor()
-                esc = cur.execute(
-                    "UPDATE Enemy_spot SET enemy_check = 'no' WHERE id_fight = " + str(
-                        fight_id[0]))
-                con.commit()
-                con.close()
                 fight = False
                 prepare_fight = True
             elif not gg_wp:
